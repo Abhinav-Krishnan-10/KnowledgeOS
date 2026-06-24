@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Caching and model downloads
+.cache/
+.huggingface/
+.pytest_cache/
+
+# Environments & Private API Keys
+.env
+.env.*
+!.env.example
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Project uploads and storage
+backend/storage/documents/*
+backend/temp_uploads/
+temp_page_*.png
+
+# Operating System files
+.DS_Store
+Thumbs.db

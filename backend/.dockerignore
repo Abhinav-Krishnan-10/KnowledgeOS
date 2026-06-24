@@ -1,0 +1,19 @@
+# Exclude git tracking metadata
+.git
+.gitignore
+
+# Exclude python cache and environment configurations
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+
+# Exclude local storage and raw documents
+storage/documents/*
+temp_uploads/
+temp_page_*.png
+
+# Exclude testing configurations
+.pytest_cache/
