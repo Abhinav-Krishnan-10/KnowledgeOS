@@ -117,6 +117,16 @@ export default function Home() {
   const [activeLLMProvider, setActiveLLMProvider] = useState("gemini");
   const [customApiKey, setCustomApiKey] = useState("");
 
+  interface SelectedCitation {
+    text: string;
+    document_name: string;
+    chunk_index: number;
+    score?: number;
+  }
+
+  // Citation Inspector State
+  const [selectedCitation, setSelectedCitation] = useState<SelectedCitation | null>(null);
+
   // Toast Helper
   const notify = (type: "success" | "error" | "info", message: string) => {
     const id = Date.now();
@@ -130,10 +140,12 @@ export default function Home() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const docs = await api.listDocuments();
-      const cats = await api.listCategories();
-      const stats = await api.getStatus();
-      const anls = await api.getAnalytics();
+      const [docs, cats, stats, anls] = await Promise.all([
+        api.listDocuments(),
+        api.listCategories(),
+        api.getStatus(),
+        api.getAnalytics()
+      ]);
       
       setDocuments(docs);
       setCategories(cats);
@@ -548,6 +560,7 @@ export default function Home() {
                     categories={categories}
                     chatBottomRef={chatBottomRef}
                     suggestedPrompts={suggestedPrompts}
+                    setSelectedCitation={setSelectedCitation}
                   />
                 )}
 
@@ -619,32 +632,62 @@ export default function Home() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Scope Document</label>
-                          <select 
-                            value={searchDocFilter || ""}
-                            onChange={(e) => setSearchDocFilter(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full bg-zinc-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500/50"
-                          >
-                            <option value="">Query Entire Vault</option>
-                            {documents.map(d => (
-                              <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                          </select>
+                        <div className="space-y-2 col-span-1 sm:col-span-3">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Filter by Category (Checkmarks)</label>
+                          <div className="flex flex-wrap gap-2">
+                            {categories.map(c => {
+                              const isChecked = searchCatFilter === c.id;
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => setSearchCatFilter(isChecked ? null : c.id)}
+                                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+                                    isChecked 
+                                      ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-300"
+                                      : "bg-zinc-950 border-white/5 text-zinc-500 hover:text-zinc-300"
+                                  }`}
+                                >
+                                  <span className={`w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px] ${
+                                    isChecked ? "bg-cyan-500 border-transparent text-black font-extrabold" : "border-zinc-700"
+                                  }`}>
+                                    {isChecked && "✓"}
+                                  </span>
+                                  <span>{c.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Scope Topic</label>
-                          <select 
-                            value={searchCatFilter || ""}
-                            onChange={(e) => setSearchCatFilter(e.target.value ? parseInt(e.target.value) : null)}
-                            className="w-full bg-zinc-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500/50"
-                          >
-                            <option value="">All Topics</option>
-                            {categories.map(c => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
+
+                        <div className="space-y-2 col-span-1 sm:col-span-3">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Filter by Document (Checkmarks)</label>
+                          <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto p-1.5 bg-zinc-950/40 rounded-xl border border-white/5">
+                            {documents.map(d => {
+                              const isChecked = searchDocFilter === d.id;
+                              return (
+                                <button
+                                  key={d.id}
+                                  type="button"
+                                  onClick={() => setSearchDocFilter(isChecked ? null : d.id)}
+                                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+                                    isChecked 
+                                      ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-300"
+                                      : "bg-zinc-950 border-white/5 text-zinc-500 hover:text-zinc-300"
+                                  }`}
+                                >
+                                  <span className={`w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px] ${
+                                    isChecked ? "bg-cyan-500 border-transparent text-black font-extrabold" : "border-zinc-700"
+                                  }`}>
+                                    {isChecked && "✓"}
+                                  </span>
+                                  <span className="truncate max-w-[150px]">{d.name}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
+
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Max Matches</label>
                           <select 
@@ -693,7 +736,16 @@ export default function Home() {
                         ) : (
                           <div className="space-y-4">
                             {searchResults.map((res, i) => (
-                              <div key={i} className="glass-panel p-5 rounded-2xl border border-white/5 bg-zinc-900/30 space-y-3 relative overflow-hidden">
+                              <div 
+                                key={i} 
+                                onClick={() => setSelectedCitation({
+                                  text: res.text,
+                                  document_name: res.document_name,
+                                  chunk_index: res.chunk_index,
+                                  score: res.similarity_score
+                                })}
+                                className="glass-panel p-5 rounded-2xl border border-white/5 bg-zinc-900/30 space-y-3 relative overflow-hidden hover:border-cyan-500/30 cursor-pointer transition-all duration-200 animate-float"
+                              >
                                 <div className="flex items-center justify-between text-xs border-b border-white/5 pb-2">
                                   <div className="flex items-center space-x-2">
                                     <BookOpen className="w-4 h-4 text-cyan-400" />
@@ -774,33 +826,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="glass-panel p-6 rounded-3xl space-y-6 border border-white/5 bg-zinc-900/30">
-                      <div className="space-y-1">
-                        <h3 className="font-extrabold text-sm text-white">Developer Account Details</h3>
-                        <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest font-bold">User Identity</span>
-                      </div>
-
-                      <div className="flex items-center space-x-4 border-b border-white/5 pb-6">
-                        <div className="w-14 h-14 rounded-full bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-lg">
-                          AK
-                        </div>
-                        <div className="space-y-1">
-                          <h4 className="font-bold text-sm text-zinc-200">Abhinav Krishnan</h4>
-                          <p className="text-zinc-500 text-xs">Primary System Administrator | abhinav@example.com</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-xs text-zinc-500">
-                        <div className="space-y-1">
-                          <span>Current workspace:</span>
-                          <span className="text-zinc-300 font-semibold block">/Users/USER/KnowledgeOS/Vault</span>
-                        </div>
-                        <div className="space-y-1">
-                          <span>User role:</span>
-                          <span className="text-zinc-300 font-semibold block">Development Owner</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </motion.div>
@@ -813,12 +838,32 @@ export default function Home() {
       <RightInspector
         activeDocDetail={activeDocDetail}
         setActiveDocDetail={setActiveDocDetail}
+        selectedCitation={selectedCitation}
+        setSelectedCitation={setSelectedCitation}
+        activeTab={activeTab}
+        activeLearningTab={activeLearningTab}
+        setActiveLearningTab={setActiveLearningTab}
         categories={categories}
         setLearningDocId={setLearningDocId}
         setActiveTab={setActiveTab as any}
         handleDeleteDoc={handleDeleteDoc}
         setChatDocFilter={setChatDocFilter}
         notify={notify}
+        flashcards={flashcards}
+        currentCardIndex={currentCardIndex}
+        setCurrentCardIndex={setCurrentCardIndex}
+        isCardFlipped={isCardFlipped}
+        setIsCardFlipped={setIsCardFlipped}
+        quizQuestions={quizQuestions}
+        currentQuizIndex={currentQuizIndex}
+        setCurrentQuizIndex={setCurrentQuizIndex}
+        selectedQuizOption={selectedQuizOption}
+        setSelectedQuizOption={setSelectedQuizOption}
+        quizScore={quizScore}
+        setQuizScore={setQuizScore}
+        quizFinished={quizFinished}
+        setQuizFinished={setQuizFinished}
+        triggerLearningGeneration={triggerLearningGeneration}
       />
     </div>
   );

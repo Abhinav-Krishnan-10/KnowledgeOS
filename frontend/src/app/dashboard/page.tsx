@@ -164,10 +164,12 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const docs = await api.listDocuments();
-      const cats = await api.listCategories();
-      const stats = await api.getStatus();
-      const anls = await api.getAnalytics();
+      const [docs, cats, stats, anls] = await Promise.all([
+        api.listDocuments(),
+        api.listCategories(),
+        api.getStatus(),
+        api.getAnalytics()
+      ]);
       
       setDocuments(docs);
       setCategories(cats);
@@ -2103,34 +2105,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Profile setup card */}
-            <div className="glass-panel p-6 rounded-3xl space-y-6">
-              <div className="space-y-1">
-                <h3 className="font-extrabold text-sm text-white">Developer Account Details</h3>
-                <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest font-bold">User Identity</span>
-              </div>
-
-              <div className="flex items-center space-x-4 border-b border-white/5 pb-6">
-                <div className="w-14 h-14 rounded-full bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-lg">
-                  AK
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-bold text-sm text-zinc-200">Abhinav Krishnan</h4>
-                  <p className="text-zinc-500 text-xs">Primary System Administrator | abhinav@example.com</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs text-zinc-500">
-                <div className="space-y-1">
-                  <span>Current workspace:</span>
-                  <span className="text-zinc-300 font-semibold block">/Users/USER/KnowledgeOS/Vault</span>
-                </div>
-                <div className="space-y-1">
-                  <span>User role:</span>
-                  <span className="text-zinc-300 font-semibold block">Development Owner</span>
-                </div>
-              </div>
-            </div>
 
           </div>
         )}

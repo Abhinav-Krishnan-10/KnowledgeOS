@@ -136,7 +136,7 @@ export const api = {
   // 1. System Status
   async getStatus(): Promise<SystemStatus> {
     try {
-      const res = await fetch(`${API_BASE}/status`);
+      const res = await fetch(`${API_BASE}/status`, { signal: AbortSignal.timeout(1500) });
       if (!res.ok) throw new Error();
       return await res.json();
     } catch {
@@ -164,7 +164,7 @@ export const api = {
   async listDocuments(categoryId?: number): Promise<Document[]> {
     try {
       const url = categoryId ? `${API_BASE}/documents?category_id=${categoryId}` : `${API_BASE}/documents`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
       if (!res.ok) throw new Error();
       return await res.json();
     } catch {
@@ -233,7 +233,7 @@ export const api = {
   // 3. Category Services
   async listCategories(): Promise<Category[]> {
     try {
-      const res = await fetch(`${API_BASE}/documents/categories`);
+      const res = await fetch(`${API_BASE}/documents/categories`, { signal: AbortSignal.timeout(1500) });
       if (!res.ok) throw new Error();
       return await res.json();
     } catch {
@@ -264,7 +264,7 @@ export const api = {
   // 4. Analytics
   async getAnalytics(): Promise<AnalyticsOverview> {
     try {
-      const res = await fetch(`${API_BASE}/documents/analytics`);
+      const res = await fetch(`${API_BASE}/documents/analytics`, { signal: AbortSignal.timeout(1500) });
       if (!res.ok) throw new Error();
       return await res.json();
     } catch {
