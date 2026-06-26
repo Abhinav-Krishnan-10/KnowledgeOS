@@ -1,6 +1,7 @@
 import React from "react";
 import { Send } from "lucide-react";
 import { Category, Document } from "../services/api";
+import { motion } from "framer-motion";
 
 interface ChatTabProps {
   chatMessages: Array<{ sender: "user" | "ai"; text: string; citations?: any[]; time: string }>;
@@ -16,6 +17,7 @@ interface ChatTabProps {
   categories: Category[];
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
   suggestedPrompts: string[];
+  setSelectedCitation: (cit: any | null) => void;
 }
 
 export const ChatTab: React.FC<ChatTabProps> = ({
@@ -31,7 +33,8 @@ export const ChatTab: React.FC<ChatTabProps> = ({
   documents,
   categories,
   chatBottomRef,
-  suggestedPrompts
+  suggestedPrompts,
+  setSelectedCitation
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-230px)] min-h-[500px] max-w-5xl mx-auto">
@@ -90,38 +93,51 @@ export const ChatTab: React.FC<ChatTabProps> = ({
           {chatMessages.map((msg, idx) => {
             const isAi = msg.sender === "ai";
             return (
-              <div key={idx} className={`flex items-start space-x-3 ${isAi ? "" : "justify-end"}`}>
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className={`flex items-start space-x-3 ${isAi ? "" : "justify-end"}`}
+              >
                 {isAi && (
-                  <div className="w-7 h-7 rounded-xl bg-purple-600 flex items-center justify-center text-[10px] text-white shrink-0 shadow-lg shadow-purple-500/10">
+                  <div className="w-7 h-7 rounded-xl bg-indigo-600 flex items-center justify-center text-[10px] text-white shrink-0 shadow-lg shadow-indigo-500/20">
                     AI
                   </div>
                 )}
                 
-                <div className={`p-4 rounded-2xl max-w-[85%] space-y-2 border ${
+                <div className={`p-4 rounded-2xl max-w-[85%] space-y-2 border backdrop-blur-sm ${
                   isAi 
-                    ? "bg-zinc-950/60 border-white/5 text-zinc-200" 
-                    : "bg-purple-600 text-white border-transparent"
+                    ? "bg-indigo-950/40 border-indigo-500/20 text-zinc-200 shadow-lg shadow-indigo-500/5" 
+                    : "bg-slate-800 text-zinc-100 border-white/5 shadow-md shadow-black/10"
                 }`}>
                   <div className="text-xs leading-relaxed whitespace-pre-wrap">{msg.text}</div>
                   
                   {/* Display Citations if present */}
                   {isAi && msg.citations && msg.citations.length > 0 && (
                     <div className="pt-2 border-t border-white/5 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[9px] font-bold text-purple-400 uppercase tracking-widest mr-1">Sources:</span>
+                      <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mr-1">Sources:</span>
                       {msg.citations.map((cit, cidx) => (
-                        <span 
+                        <button 
                           key={cidx} 
-                          className="text-[9px] bg-zinc-950 border border-white/5 text-zinc-400 px-2 py-0.5 rounded flex items-center space-x-1"
+                          type="button"
+                          onClick={() => setSelectedCitation({
+                            text: cit.text,
+                            document_name: cit.document_name,
+                            chunk_index: cit.chunk_index,
+                            score: cit.similarity_score
+                          })}
+                          className="text-[9px] bg-zinc-950 hover:bg-zinc-900 border border-white/5 hover:border-indigo-500/20 text-zinc-400 hover:text-indigo-300 px-2 py-0.5 rounded flex items-center space-x-1 transition-colors cursor-pointer"
                           title={cit.text}
                         >
                           <span>{cit.document_name}</span>
-                          <span className="text-[8px] text-purple-400">#chunk {cit.chunk_index}</span>
-                        </span>
+                          <span className="text-[8px] text-indigo-400 font-mono">#chunk {cit.chunk_index}</span>
+                        </button>
                       ))}
                     </div>
                   )}
                   
-                  <span className={`text-[8px] font-mono block text-right ${isAi ? "text-zinc-600" : "text-purple-300"}`}>
+                  <span className={`text-[8px] font-mono block text-right ${isAi ? "text-zinc-500" : "text-zinc-400"}`}>
                     {msg.time}
                   </span>
                 </div>
@@ -131,7 +147,7 @@ export const ChatTab: React.FC<ChatTabProps> = ({
                     Us
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
 
