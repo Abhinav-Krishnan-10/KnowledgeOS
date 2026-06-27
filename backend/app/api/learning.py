@@ -2,7 +2,7 @@ import json
 import re
 import logging
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Header
 from sqlmodel import Session, select
 from app.db.database import get_session
 from app.db.models import Document, GeneratedContent, DocumentChunk
@@ -65,9 +65,11 @@ def get_document_full_text(session: Session, document_id: int) -> str:
 async def generate_summary(
     document_id: int = Body(..., embed=True),
     force_regenerate: bool = Body(False),
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
-    """Generates a concise summary of the document, caching the output."""
+    # ...
     # Check if document exists
     doc = session.get(Document, document_id)
     if not doc:
@@ -88,7 +90,10 @@ async def generate_summary(
     capped_text = full_text[:40000] 
     
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = "You are an educational AI assistant that extracts key takeaways and creates clear summaries of text."
         prompt = (
             f"Analyze the following document and write a structured, clear, and comprehensive summary. "
@@ -119,6 +124,8 @@ async def generate_flashcards(
     document_id: int = Body(..., embed=True),
     count: int = Body(10),
     force_regenerate: bool = Body(False),
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Generates question-answer learning cards based on the document."""
@@ -139,7 +146,10 @@ async def generate_flashcards(
     capped_text = full_text[:30000]
     
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = "You are a professional educational developer. You create flashcards to help students study materials."
         prompt = (
             f"Based on the text below, create {count} flashcards. Each flashcard must consist of a "
@@ -175,6 +185,8 @@ async def generate_quiz(
     document_id: int = Body(..., embed=True),
     count: int = Body(5),
     force_regenerate: bool = Body(False),
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Generates dynamic assessment multiple-choice questions from the document."""
@@ -195,7 +207,10 @@ async def generate_quiz(
     capped_text = full_text[:30000]
     
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = "You are an academic test designer. You build multiple choice assessment quizzes."
         prompt = (
             f"Based on the text below, generate a multiple-choice quiz with {count} questions. "
@@ -235,6 +250,8 @@ async def generate_explanation(
     document_id: int = Body(..., embed=True),
     concept: Optional[str] = Body(None),
     level: str = Body("simple"),  # simple, intermediate, advanced
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Explains a complex concept within the document using plain English."""
@@ -246,7 +263,10 @@ async def generate_explanation(
     capped_text = full_text[:30000]
     
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = "You are a teacher specialized in explaining complex technical parameters in easy-to-understand terms."
         
         target = f"the concept '{concept}' as discussed in the text" if concept else "the general core contents of the text"
@@ -277,6 +297,8 @@ async def generate_explanation(
 @router.post("/notes")
 async def generate_notes(
     document_id: int = Body(..., embed=True),
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Generates quick-study revision notes from the document."""
@@ -288,7 +310,10 @@ async def generate_notes(
     capped_text = full_text[:30000]
     
     try:
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = "You are a professional writer specialized in formatting educational study guides and cheat sheets."
         prompt = (
             f"Based on the document text below, create a structured revision guide and cheat sheet. "

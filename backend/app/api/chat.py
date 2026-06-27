@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Header
 from sqlmodel import Session
 from app.db.database import get_session
 from app.core.llm_factory import get_llm_provider
@@ -18,6 +18,8 @@ async def conversational_chat(
     limit: Optional[int] = Body(5),
     document_id: Optional[int] = Body(None),
     category_id: Optional[int] = Body(None),
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Answers user query by retrieving relevant document context chunks and querying the active LLM."""
@@ -26,7 +28,10 @@ async def conversational_chat(
         
     try:
         # Dynamically fetch configured LLM provider (Gemini, OpenAI, or Ollama)
-        llm_provider = get_llm_provider()
+        llm_provider = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         
         # Initialize RAG Engine
         rag_engine = RAGEngine(vector_store, llm_provider)
