@@ -48,7 +48,7 @@ class VectorStoreService:
         category_id: Optional[int] = None
     ) -> List[Tuple[DocumentChunk, float]]:
         try:
-            query_embedding = self.embedder.get_embedding(query)
+            query_embedding = self.embedder.get_embedding(query, is_query=True)
             distance_expr = ChunkEmbedding.embedding.cosine_distance(query_embedding).label("distance")
             
             statement = select(DocumentChunk, distance_expr).join(

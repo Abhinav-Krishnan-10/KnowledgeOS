@@ -8,7 +8,7 @@ import pptx
 
 class RecursiveCharacterTextSplitter:
     """A lightweight, zero-dependency recursive character text splitter."""
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200, separators: List[str] = None):
+    def __init__(self, chunk_size: int = 500, chunk_overlap: int = 100, separators: List[str] = None):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.separators = separators or ["\n\n", "\n", " ", ""]
@@ -74,8 +74,8 @@ class DocumentProcessor:
     
     def __init__(self):
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=500,
+            chunk_overlap=100,
             separators=["\n\n", "\n", " ", ""]
         )
 

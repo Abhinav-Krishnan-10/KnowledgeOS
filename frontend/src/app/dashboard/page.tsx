@@ -151,6 +151,10 @@ export default function Dashboard() {
   const [activeLLMProvider, setActiveLLMProvider] = useState("gemini");
   const [customApiKey, setCustomApiKey] = useState("");
 
+  useEffect(() => {
+    api.setLLMConfig(activeLLMProvider, customApiKey);
+  }, [activeLLMProvider, customApiKey]);
+
   // Notify Helper
   const notify = (type: "success" | "error" | "info", message: string) => {
     const id = Date.now();

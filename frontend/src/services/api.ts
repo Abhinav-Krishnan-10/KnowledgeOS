@@ -123,16 +123,28 @@ let mockDocuments: Document[] = [
 let mockSearchHistory: any[] = [];
 
 // Helper to determine if backend is online
-async function checkBackendOnline(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/status`, { signal: AbortSignal.timeout(1500) });
-    return res.ok;
-  } catch {
-    return false;
+let activeProvider = 'gemini';
+let customApiKey = '';
+
+function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (activeProvider) {
+    headers['X-LLM-Provider'] = activeProvider;
   }
+  if (customApiKey) {
+    headers['X-LLM-API-Key'] = customApiKey;
+  }
+  return headers;
 }
 
 export const api = {
+  setLLMConfig(provider: string, apiKey: string) {
+    activeProvider = provider;
+    customApiKey = apiKey;
+  },
+
   // 1. System Status
   async getStatus(): Promise<SystemStatus> {
     try {
@@ -365,7 +377,7 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ query, limit, document_id: documentId, category_id: categoryId })
       });
       if (!res.ok) throw new Error();
@@ -416,7 +428,7 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE}/learning/summary`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ document_id: documentId, force_regenerate: forceRegenerate })
       });
       if (!res.ok) throw new Error();
@@ -447,7 +459,7 @@ In conclusion, the document establishes a rigorous blueprint for deploying AI kn
     try {
       const res = await fetch(`${API_BASE}/learning/flashcards`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ document_id: documentId, count, force_regenerate: forceRegenerate })
       });
       if (!res.ok) throw new Error();
@@ -469,7 +481,7 @@ In conclusion, the document establishes a rigorous blueprint for deploying AI kn
     try {
       const res = await fetch(`${API_BASE}/learning/quiz`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ document_id: documentId, count, force_regenerate: forceRegenerate })
       });
       if (!res.ok) throw new Error();
@@ -521,7 +533,7 @@ In conclusion, the document establishes a rigorous blueprint for deploying AI kn
     try {
       const res = await fetch(`${API_BASE}/learning/explain`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ document_id: documentId, concept, level })
       });
       if (!res.ok) throw new Error();
@@ -562,7 +574,7 @@ Retrieval is executed by projecting a query string into the same embedding space
     try {
       const res = await fetch(`${API_BASE}/learning/notes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ document_id: documentId })
       });
       if (!res.ok) throw new Error();
@@ -601,7 +613,7 @@ Retrieval is executed by projecting a query string into the same embedding space
     try {
       const res = await fetch(`${API_BASE}/generation/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ content_type: contentType, instructions, document_ids: documentIds })
       });
       if (!res.ok) throw new Error();

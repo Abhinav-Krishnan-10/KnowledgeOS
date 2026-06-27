@@ -27,23 +27,33 @@ class EmbeddingService:
     def __init__(self):
         self.model = get_embedding_model()
 
-    def get_embedding(self, text: str) -> List[float]:
+    def get_embedding(self, text: str, is_query: bool = False) -> List[float]:
         """Generates a list of floats representing the embedding for a single text string."""
         if not text:
             raise ValueError("Input text for embedding cannot be empty.")
         try:
+            model_name = settings.EMBEDDING_MODEL.lower()
+            if is_query and "bge" in model_name:
+                text = f"Represent this sentence for searching relevant passages: {text}"
             embedding = self.model.encode(text, convert_to_numpy=True)
             return embedding.tolist()
         except Exception as e:
             logger.error(f"Failed to generate embedding: {e}")
             raise e
 
-    def get_embeddings(self, texts: List[str]) -> List[List[float]]:
+    def get_embeddings(self, texts: List[str], is_query: bool = False) -> List[List[float]]:
         """Generates embeddings for a batch of text strings."""
         if not texts:
             return []
         try:
-            embeddings = self.model.encode(texts, convert_to_numpy=True)
+            model_name = settings.EMBEDDING_MODEL.lower()
+            processed_texts = []
+            for text in texts:
+                if is_query and "bge" in model_name:
+                    processed_texts.append(f"Represent this sentence for searching relevant passages: {text}")
+                else:
+                    processed_texts.append(text)
+            embeddings = self.model.encode(processed_texts, convert_to_numpy=True)
             return [emb.tolist() for emb in embeddings]
         except Exception as e:
             logger.error(f"Failed to generate batch embeddings: {e}")

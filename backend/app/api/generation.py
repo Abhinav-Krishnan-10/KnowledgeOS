@@ -1,6 +1,6 @@
 import logging
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Header
 from sqlmodel import Session
 from app.db.database import get_session
 from app.db.models import GeneratedContent, DocumentChunk, Document
@@ -20,6 +20,8 @@ async def generate_content(
     content_type: str = Body(...),  # resume, project_description, portfolio, report, presentation
     instructions: str = Body(...),  # details on what kind of content to output
     document_ids: Optional[List[int]] = Body(None),  # optional list of documents to ground the output
+    x_llm_provider: Optional[str] = Header(None),
+    x_llm_api_key: Optional[str] = Header(None),
     session: Session = Depends(get_session)
 ):
     """Generates new personalized content grounded in the uploaded files context matching instructions."""
@@ -67,7 +69,10 @@ async def generate_content(
                 
         context_str = "\n\n".join(context_blocks)
         
-        llm = get_llm_provider()
+        llm = get_llm_provider(
+            provider_name=x_llm_provider,
+            api_key=x_llm_api_key
+        )
         system_instruction = (
             "You are a professional content writer. Your task is to generate clean, professional, "
             "and highly styled document materials. You MUST base your content heavily on the provided "

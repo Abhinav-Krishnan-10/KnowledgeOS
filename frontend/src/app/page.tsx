@@ -117,6 +117,10 @@ export default function Home() {
   const [activeLLMProvider, setActiveLLMProvider] = useState("gemini");
   const [customApiKey, setCustomApiKey] = useState("");
 
+  useEffect(() => {
+    api.setLLMConfig(activeLLMProvider, customApiKey);
+  }, [activeLLMProvider, customApiKey]);
+
   interface SelectedCitation {
     text: string;
     document_name: string;

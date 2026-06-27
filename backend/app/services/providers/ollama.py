@@ -11,7 +11,7 @@ class OllamaProvider(LLMProvider):
         self.base_url = settings.OLLAMA_BASE_URL.rstrip("/")
         self.model = settings.OLLAMA_MODEL
 
-    def generate(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+    def generate(self, prompt: str, system_instruction: Optional[str] = None, enable_web_search: bool = False) -> str:
         messages = [{"role": "system", "content": system_instruction}] if system_instruction else []
         messages.append({"role": "user", "content": prompt})
         try:
@@ -23,7 +23,7 @@ class OllamaProvider(LLMProvider):
             logger.error(f"Ollama generate failed: {e}")
             raise e
 
-    async def generate_async(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+    async def generate_async(self, prompt: str, system_instruction: Optional[str] = None, enable_web_search: bool = False) -> str:
         messages = [{"role": "system", "content": system_instruction}] if system_instruction else []
         messages.append({"role": "user", "content": prompt})
         try:

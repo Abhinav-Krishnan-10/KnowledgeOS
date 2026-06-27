@@ -4,18 +4,20 @@ from app.services.providers.gemini import GeminiProvider
 from app.services.providers.openai import OpenAIProvider
 from app.services.providers.ollama import OllamaProvider
 
-def get_llm_provider() -> LLMProvider:
-    """Factory to retrieve the configured LLM Provider."""
-    provider_name = settings.LLM_PROVIDER.lower().strip()
+from typing import Optional
+
+def get_llm_provider(provider_name: Optional[str] = None, api_key: Optional[str] = None) -> LLMProvider:
+    """Factory to retrieve the configured LLM Provider, supporting optional dynamic overrides."""
+    name = (provider_name or settings.LLM_PROVIDER).lower().strip()
     
-    if provider_name == "gemini":
-        return GeminiProvider()
-    elif provider_name == "openai":
-        return OpenAIProvider()
-    elif provider_name == "ollama":
+    if name == "gemini":
+        return GeminiProvider(api_key=api_key)
+    elif name == "openai":
+        return OpenAIProvider(api_key=api_key)
+    elif name == "ollama":
         return OllamaProvider()
     else:
         raise ValueError(
-            f"Unsupported LLM_PROVIDER: '{settings.LLM_PROVIDER}'. "
+            f"Unsupported LLM_PROVIDER: '{name}'. "
             "Supported options are 'gemini', 'openai', and 'ollama'."
         )

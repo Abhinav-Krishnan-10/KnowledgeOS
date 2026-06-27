@@ -17,7 +17,9 @@ class RAGEngine:
         query_text: str,
         limit: int = 5,
         document_id: Optional[int] = None,
-        category_id: Optional[int] = None
+        category_id: Optional[int] = None,
+        enable_web_search: bool = True,
+        score_threshold: float = 0.55
     ) -> Dict[str, Any]:
         try:
             chunks_with_scores = self.vector_store.search_similar_chunks(
@@ -30,8 +32,11 @@ class RAGEngine:
             
             context_blocks = []
             references = []
+            retrieved_context = []
             
             for chunk, score in chunks_with_scores:
+                if score < score_threshold:
+                    continue
                 doc_name = chunk.document.name if chunk.document else f"Doc ID {chunk.document_id}"
                 context_blocks.append(
                     f"--- START SOURCE CHUNK ({doc_name}, Index {chunk.chunk_index}) ---\n"
@@ -44,34 +49,44 @@ class RAGEngine:
                     "chunk_index": chunk.chunk_index,
                     "similarity_score": score
                 })
+                retrieved_context.append({
+                    "text": chunk.text,
+                    "document_name": doc_name,
+                    "chunk_index": chunk.chunk_index,
+                    "similarity_score": score
+                })
 
             context_str = "\n\n".join(context_blocks)
             
             system_instruction = (
-                "You are the AI Knowledge Assistant of KnowledgeOS.\n"
-                "Your goal is to answer the user's question accurately, concisely, and based ONLY on the source chunks provided. "
-                "Citing documents/sources you extract information from is crucial for validation.\n\n"
-                "Constraints:\n"
-                "- If the context chunks do not contain information relevant to the user's query, "
-                "honestly state that you cannot answer based on the stored knowledge base rather than fabricating facts.\n"
-                "- Only use facts that are directly mentioned in the sources. Do not assume or extrapolate."
+                "You are the AI Knowledge Assistant of KnowledgeOS, a premium personal AI workspace.\n"
+                "Your goal is to answer the user's question accurately, clearly, and comprehensively.\n\n"
+                "Grounding Guidelines:\n"
+                "- If the user asks a question relevant to the provided context chunks from their knowledge base, "
+                "prioritize answering based on those chunks and cite the sources/filenames where appropriate.\n"
+                "- If the context chunks are empty, irrelevant, or do not contain information related to the question, "
+                "ignore them completely. Answer the query comprehensively using your general knowledge and live web search grounding.\n"
+                "- Clearly differentiate between facts grounded in the user's documents and general knowledge/web results."
             )
             
             prompt = (
                 f"User Question:\n{query_text}\n\n"
                 f"Context Chunks from User's Knowledge Base:\n"
                 f"{context_str if context_str else '[No context found in knowledge base]'}\n\n"
-                f"Please construct the final response using the context chunks above."
+                f"Please construct the final response. Prioritize using the context chunks above if they are relevant, "
+                f"or answer using general knowledge/web search if they are not."
             )
             
             answer = self.llm_provider.generate(
                 prompt=prompt,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                enable_web_search=enable_web_search
             )
             
             return {
                 "answer": answer,
-                "references": references
+                "references": references,
+                "retrieved_context": retrieved_context
             }
         except Exception as e:
             logger.error(f"Error in RAG query: {e}")
@@ -83,7 +98,9 @@ class RAGEngine:
         query_text: str,
         limit: int = 5,
         document_id: Optional[int] = None,
-        category_id: Optional[int] = None
+        category_id: Optional[int] = None,
+        enable_web_search: bool = True,
+        score_threshold: float = 0.55
     ) -> Dict[str, Any]:
         try:
             chunks_with_scores = self.vector_store.search_similar_chunks(
@@ -96,8 +113,11 @@ class RAGEngine:
             
             context_blocks = []
             references = []
+            retrieved_context = []
             
             for chunk, score in chunks_with_scores:
+                if score < score_threshold:
+                    continue
                 doc_name = chunk.document.name if chunk.document else f"Doc ID {chunk.document_id}"
                 context_blocks.append(
                     f"--- START SOURCE CHUNK ({doc_name}, Index {chunk.chunk_index}) ---\n"
@@ -110,34 +130,44 @@ class RAGEngine:
                     "chunk_index": chunk.chunk_index,
                     "similarity_score": score
                 })
+                retrieved_context.append({
+                    "text": chunk.text,
+                    "document_name": doc_name,
+                    "chunk_index": chunk.chunk_index,
+                    "similarity_score": score
+                })
 
             context_str = "\n\n".join(context_blocks)
             
             system_instruction = (
-                "You are the AI Knowledge Assistant of KnowledgeOS.\n"
-                "Your goal is to answer the user's question accurately, concisely, and based ONLY on the source chunks provided. "
-                "Citing documents/sources you extract information from is crucial for validation.\n\n"
-                "Constraints:\n"
-                "- If the context chunks do not contain information relevant to the user's query, "
-                "honestly state that you cannot answer based on the stored knowledge base rather than fabricating facts.\n"
-                "- Only use facts that are directly mentioned in the sources. Do not assume or extrapolate."
+                "You are the AI Knowledge Assistant of KnowledgeOS, a premium personal AI workspace.\n"
+                "Your goal is to answer the user's question accurately, clearly, and comprehensively.\n\n"
+                "Grounding Guidelines:\n"
+                "- If the user asks a question relevant to the provided context chunks from their knowledge base, "
+                "prioritize answering based on those chunks and cite the sources/filenames where appropriate.\n"
+                "- If the context chunks are empty, irrelevant, or do not contain information related to the question, "
+                "ignore them completely. Answer the query comprehensively using your general knowledge and live web search grounding.\n"
+                "- Clearly differentiate between facts grounded in the user's documents and general knowledge/web results."
             )
             
             prompt = (
                 f"User Question:\n{query_text}\n\n"
                 f"Context Chunks from User's Knowledge Base:\n"
                 f"{context_str if context_str else '[No context found in knowledge base]'}\n\n"
-                f"Please construct the final response using the context chunks above."
+                f"Please construct the final response. Prioritize using the context chunks above if they are relevant, "
+                f"or answer using general knowledge/web search if they are not."
             )
             
             answer = await self.llm_provider.generate_async(
                 prompt=prompt,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                enable_web_search=enable_web_search
             )
             
             return {
                 "answer": answer,
-                "references": references
+                "references": references,
+                "retrieved_context": retrieved_context
             }
         except Exception as e:
             logger.error(f"Error in async RAG query: {e}")
